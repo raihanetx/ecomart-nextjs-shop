@@ -4,6 +4,15 @@ import React, { useRef, useState } from 'react'
 import { useAdmin } from '@/components/admin/context/AdminContext'
 import type { Category } from '@/types'
 
+// Utility to clear shop data cache so frontend shows updates immediately
+async function clearShopCache() {
+  try {
+    await fetch('/api/shop-data', { method: 'POST' })
+  } catch (error) {
+    console.error('Failed to clear shop cache:', error)
+  }
+}
+
 // Popular icons that non-technical users can easily understand
 const POPULAR_ICONS = [
   { icon: 'ri-leaf-line', label: 'Leaf' },
@@ -111,6 +120,7 @@ export function CategoriesView() {
         if (response.ok) {
           showToastMsg('Category updated successfully!')
           refetchCategories()
+          clearShopCache() // Clear frontend cache so changes reflect immediately
           setEditingCategory(null)
         } else {
           const data = await response.json()
@@ -135,6 +145,7 @@ export function CategoriesView() {
         if (response.ok) {
           showToastMsg('Category created successfully!')
           refetchCategories()
+          clearShopCache() // Clear frontend cache so changes reflect immediately
           setEditingCategory(null)
         } else {
           const data = await response.json()
@@ -160,6 +171,7 @@ export function CategoriesView() {
       if (response.ok) {
         showToastMsg('Category deleted successfully!')
         refetchCategories()
+        clearShopCache() // Clear frontend cache so changes reflect immediately
       } else {
         showToastMsg('Failed to delete category')
       }

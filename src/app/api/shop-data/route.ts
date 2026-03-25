@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
-import { db, getCachedShopData, setCachedShopData } from '@/db'
+import { db, getCachedShopData, setCachedShopData, clearShopDataCache } from '@/db'
 import { categories, products, settings, variants } from '@/db/schema'
+import { isApiAuthenticated, authErrorResponse } from '@/lib/api-auth'
 
 // Cache TTL: 60 seconds
 const CACHE_TTL = 60 * 1000
@@ -212,6 +213,32 @@ export async function GET() {
     return NextResponse.json({
       success: false,
       error: 'Failed to fetch shop data'
+    }, { status: 500 })
+  }
+}
+
+// POST /api/shop-data - Clear cache (admin only)
+export async function POST() {
+  try {
+    // Authentication required
+    if (!await isApiAuthenticated()) {
+      return authErrorResponse()
+    }
+
+    // Clear server-side cache
+    clearShopDataCache()
+    
+    console.log('[SHOP-DATA] Cache cleared by admin')
+    
+    return NextResponse.json({
+      success: true,
+      message: 'Shop data cache cleared successfully'
+    })
+  } catch (error) {
+    console.error('[SHOP-DATA] Error clearing cache:', error)
+    return NextResponse.json({
+      success: false,
+      error: 'Failed to clear cache'
     }, { status: 500 })
   }
 }

@@ -129,6 +129,11 @@ export function clearAllCaches() {
   globalThis.__courierCredentials = undefined
 }
 
+// Clear shop data cache only (used when admin updates products/categories)
+export function clearShopDataCache() {
+  globalThis.__shopDataCache = undefined
+}
+
 // Re-export schema
 export * from './schema'
 export type Database = typeof db

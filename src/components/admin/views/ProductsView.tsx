@@ -4,6 +4,15 @@ import React, { useEffect, useState } from 'react'
 import type { Product } from '@/types'
 import { useAdmin } from '@/components/admin/context/AdminContext'
 
+// Utility to clear shop data cache so frontend shows updates immediately
+async function clearShopCache() {
+  try {
+    await fetch('/api/shop-data', { method: 'POST' })
+  } catch (error) {
+    console.error('Failed to clear shop cache:', error)
+  }
+}
+
 export default function ProductsView() {
   const {
     products,
@@ -337,6 +346,7 @@ export default function ProductsView() {
       showToastMsg('Error saving product')
     }
     
+    clearShopCache() // Clear frontend cache so changes reflect immediately
     setEditingProduct(null)
   }
 
@@ -360,6 +370,8 @@ export default function ProductsView() {
         // Revert on failure
         setProducts(products.map(p => p.id === id ? { ...p, status: product.status } : p))
         showToastMsg('Failed to update status')
+      } else {
+        clearShopCache() // Clear frontend cache so changes reflect immediately
       }
     } catch (error) {
       // Revert on error
@@ -377,6 +389,7 @@ export default function ProductsView() {
       if (result.success) {
         setProducts(products.filter(p => p.id !== id))
         showToastMsg('Product deleted successfully')
+        clearShopCache() // Clear frontend cache so changes reflect immediately
       } else {
         showToastMsg('Failed to delete product')
       }
