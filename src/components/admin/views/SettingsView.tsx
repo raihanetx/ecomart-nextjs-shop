@@ -76,6 +76,7 @@ const SettingsView: React.FC = () => {
   const [origOutsideDhaka, setOrigOutsideDhaka] = useState(120)
   const [origUniversalCharge, setOrigUniversalCharge] = useState(0)
   const [origIsUniversalOn, setOrigIsUniversalOn] = useState(false)
+  const [origFreeThreshold, setOrigFreeThreshold] = useState(2000)
   
   // Social state
   const [socialEditing, setSocialEditing] = useState(false)
@@ -160,6 +161,7 @@ const SettingsView: React.FC = () => {
         setOrigOutsideDhaka(settings.outsideDhakaDelivery || 120)
         setOrigUniversalCharge(settings.universalDeliveryCharge || 0)
         setOrigIsUniversalOn(settings.universalDelivery ?? false)
+        setOrigFreeThreshold(settings.freeDeliveryMin || 2000)
         
         setPhone(settings.phoneNumber || '')
         setWhatsapp(settings.whatsappNumber || '')
@@ -364,6 +366,7 @@ const SettingsView: React.FC = () => {
     setOrigOutsideDhaka(outsideDhaka)
     setOrigUniversalCharge(universalCharge)
     setOrigIsUniversalOn(isUniversalOn)
+    setOrigFreeThreshold(freeThreshold)
     setDeliveryEditing(true)
   }
   
@@ -372,6 +375,7 @@ const SettingsView: React.FC = () => {
     setOutsideDhaka(origOutsideDhaka)
     setUniversalCharge(origUniversalCharge)
     setIsUniversalOn(origIsUniversalOn)
+    setFreeThreshold(origFreeThreshold)
     setDeliveryEditing(false)
   }
 
