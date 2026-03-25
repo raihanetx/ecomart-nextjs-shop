@@ -388,7 +388,15 @@ export default function ProductsView() {
   const addVariety = () => {
     console.log('[ProductsView] addVariety called, current varieties:', prodVarieties.length)
     setProdVarieties(prev => {
-      const newVarieties = [...prev, { id: Date.now(), name: '', price: '', stock: '', discount: '', discountType: 'pct', discountValue: '' }]
+      const newVarieties = [...prev, { 
+        id: Date.now(), 
+        name: '', 
+        price: '', 
+        stock: '', 
+        discount: '', 
+        discountType: 'pct' as const, 
+        discountValue: '' 
+      }]
       console.log('[ProductsView] new varieties count:', newVarieties.length)
       return newVarieties
     })
