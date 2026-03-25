@@ -455,7 +455,8 @@ export async function POST(request: NextRequest) {
         const settingsData = backupData.settings[0]
         const updateData: Record<string, any> = {}
 
-        // Only update non-sensitive fields
+        // SECURITY: Only update non-sensitive fields
+        // Credentials are NEVER restored from backup for security
         const safeFields = [
           'websiteName', 'slogan', 'logoUrl', 'faviconUrl', 'heroImages',
           'insideDhakaDelivery', 'outsideDhakaDelivery', 'freeDeliveryMin',
@@ -468,11 +469,13 @@ export async function POST(request: NextRequest) {
           'thirdSectionName', 'thirdSectionSlogan',
           'heroAnimationSpeed', 'heroAnimationType',
           'stockLowPercent', 'stockMediumPercent',
-          // Include credentials from backup (buyer might have set them before)
-          'adminUsername', 'adminPassword',
-          'steadfastApiKey', 'steadfastSecretKey', 'steadfastWebhookUrl',
-          'cloudinaryCloudName', 'cloudinaryApiKey', 'cloudinaryApiSecret',
+          'courierEnabled',
         ]
+        // NOTE: Credentials are intentionally NOT included for security:
+        // - adminUsername, adminPassword
+        // - steadfastApiKey, steadfastSecretKey, steadfastWebhookUrl
+        // - cloudinaryCloudName, cloudinaryApiKey, cloudinaryApiSecret
+        // These must be manually configured after restore
 
         for (const field of safeFields) {
           if (settingsData[field] !== undefined) {

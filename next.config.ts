@@ -31,15 +31,28 @@ const nextConfig: NextConfig = {
   
   // Image Optimization - CRITICAL for speed
   images: {
-    // Enable image optimization for all external sources
+    // SECURITY: Restrict image optimization to known sources
+    // This prevents abuse of the image optimization API
     remotePatterns: [
+      // Cloudinary (for user uploads)
       {
         protocol: 'https',
-        hostname: '**',
+        hostname: 'res.cloudinary.com',
       },
+      // Placeholder images (development/fallback)
+      {
+        protocol: 'https',
+        hostname: 'via.placeholder.com',
+      },
+      // Unsplash (for stock images)
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+      // Local development
       {
         protocol: 'http',
-        hostname: '**',
+        hostname: 'localhost',
       },
     ],
     // Image formats for better compression

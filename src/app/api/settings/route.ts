@@ -364,9 +364,6 @@ export async function PUT(request: NextRequest) {
     // ===== EXECUTE UPDATE =====
     const existing = await db.select({ id: settings.id }).from(settings).where(eq(settings.id, 1)).limit(1)
     
-    console.log('[SETTINGS API] Existing record:', existing.length > 0 ? 'found' : 'not found')
-    console.log('[SETTINGS API] Update data:', JSON.stringify(updateData, null, 2))
-    
     let result: any[]
     
     if (existing.length === 0) {
@@ -374,18 +371,12 @@ export async function PUT(request: NextRequest) {
         ...DEFAULT_SETTINGS,
         ...updateData
       }).returning()
-      console.log('[SETTINGS API] Inserted new record')
     } else {
       result = await db.update(settings)
         .set(updateData)
         .where(eq(settings.id, 1))
         .returning()
-      console.log('[SETTINGS API] Updated existing record')
     }
-    
-    console.log('[SETTINGS API] Result cloudinaryApiKey:', result[0]?.cloudinaryApiKey ? 'SET' : 'NOT SET')
-    console.log('[SETTINGS API] Result steadfastApiKey:', result[0]?.steadfastApiKey ? 'SET' : 'NOT SET')
-    console.log('[SETTINGS API] Result cloudinaryApiSecret:', result[0]?.cloudinaryApiSecret ? 'SET (encrypted)' : 'NOT SET')
     
     // CRITICAL: Clear old cache first to prevent stale data
     globalThis.__settingsCache = undefined

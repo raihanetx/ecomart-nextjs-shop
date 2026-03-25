@@ -202,7 +202,13 @@ export const abandonedCheckouts = pgTable('abandoned_checkouts', {
   checkoutEndedAt: timestamp('checkout_ended_at'),
   checkoutSeconds: integer('checkout_seconds').default(0),
   createdAt: timestamp('created_at').defaultNow(),
-})
+}, (table) => [
+  // Performance indexes for common queries
+  index('idx_abandoned_status').on(table.status),
+  index('idx_abandoned_session_id').on(table.sessionId),
+  index('idx_abandoned_phone').on(table.phone),
+  index('idx_abandoned_visit_date').on(table.visitDate),
+])
 
 // ============================================
 // SETTINGS

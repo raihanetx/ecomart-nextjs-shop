@@ -1,13 +1,19 @@
 import { NextResponse } from 'next/server'
 import { initializeDatabase, isDatabaseReady } from '@/lib/auto-init'
+import { isApiAuthenticated, authErrorResponse } from '@/lib/api-auth'
 
 /**
  * POST /api/init-db
  * Manually trigger database initialization
- * This is also called automatically on server startup
+ * Requires admin authentication
  */
 export async function POST() {
   try {
+    // Authentication required for security
+    if (!await isApiAuthenticated()) {
+      return authErrorResponse()
+    }
+    
     console.log('[INIT-DB] Manual initialization requested...')
     
     const result = await initializeDatabase()
