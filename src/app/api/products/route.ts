@@ -1,8 +1,86 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/db'
-import { products, variants, productImages, productFaqs, relatedProducts, reviews, orderItems } from '@/db/schema'
+import { db, sqlClient } from '@/db'
+import { products, variants, productImages, productFaqs, relatedProducts, reviews, orderItems, categories } from '@/db/schema'
 import { eq, like, or, and, sql, inArray } from 'drizzle-orm'
 import { isApiAuthenticated, authErrorResponse } from '@/lib/api-auth'
+
+// Flag to track if tables have been initialized
+let _tablesInitialized = false
+
+/**
+ * Ensure products table exists
+ */
+async function ensureTablesExist() {
+  if (_tablesInitialized) return true
+  
+  try {
+    // Try to query - if it works, tables exist
+    await db.select().from(products).limit(1)
+    _tablesInitialized = true
+    return true
+  } catch (error: any) {
+    // Table doesn't exist, create it
+    if (error.message?.includes('relation') || error.message?.includes('does not exist')) {
+      console.log('[PRODUCTS] Creating missing tables...')
+      
+      try {
+        // Create categories first (foreign key dependency)
+        await sqlClient`CREATE TABLE IF NOT EXISTS categories (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          type TEXT DEFAULT 'icon',
+          icon TEXT,
+          image TEXT,
+          items INTEGER DEFAULT 0,
+          status TEXT DEFAULT 'Active',
+          created_at TIMESTAMP DEFAULT NOW()
+        )`
+        
+        // Create products table
+        await sqlClient`CREATE TABLE IF NOT EXISTS products (
+          id SERIAL PRIMARY KEY,
+          name TEXT NOT NULL,
+          category TEXT NOT NULL,
+          category_id TEXT REFERENCES categories(id),
+          image TEXT NOT NULL,
+          price NUMERIC(10,2) NOT NULL,
+          old_price NUMERIC(10,2),
+          discount TEXT DEFAULT '0%',
+          discount_type TEXT DEFAULT 'pct',
+          discount_value NUMERIC(10,2) DEFAULT '0',
+          offer BOOLEAN DEFAULT false,
+          status TEXT DEFAULT 'active',
+          short_desc TEXT,
+          long_desc TEXT,
+          weight TEXT,
+          created_at TIMESTAMP DEFAULT NOW(),
+          updated_at TIMESTAMP DEFAULT NOW()
+        )`
+        
+        // Create variants table
+        await sqlClient`CREATE TABLE IF NOT EXISTS variants (
+          id SERIAL PRIMARY KEY,
+          name TEXT NOT NULL,
+          stock INTEGER NOT NULL,
+          initial_stock INTEGER NOT NULL,
+          price NUMERIC(10,2) DEFAULT '0',
+          discount TEXT DEFAULT '0%',
+          discount_type TEXT DEFAULT 'pct',
+          discount_value NUMERIC(10,2) DEFAULT '0',
+          product_id INTEGER REFERENCES products(id) NOT NULL
+        )`
+        
+        console.log('[PRODUCTS] All tables created!')
+        _tablesInitialized = true
+        return true
+      } catch (createError) {
+        console.error('[PRODUCTS] Failed to create tables:', createError)
+        throw createError
+      }
+    }
+    throw error
+  }
+}
 
 // Helper function to parse discount string
 function parseDiscount(discountStr: string | null): { discountType: 'pct' | 'fixed'; discountValue: number } {
@@ -45,6 +123,8 @@ function addParsedDiscount(product: any) {
 // GET /api/products - Get all products
 export async function GET(request: NextRequest) {
   try {
+    await ensureTablesExist()
+    
     const searchParams = request.nextUrl.searchParams
     const category = searchParams.get('category')
     const search = searchParams.get('search')
@@ -148,6 +228,8 @@ export async function POST(request: NextRequest) {
     if (!await isApiAuthenticated()) {
       return authErrorResponse()
     }
+
+    await ensureTablesExist()
 
     const body = await request.json()
     

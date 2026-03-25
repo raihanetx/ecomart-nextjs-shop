@@ -1,12 +1,57 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/db'
+import { db, sqlClient } from '@/db'
 import { categories, products } from '@/db/schema'
-import { eq, sql, isNull } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { isApiAuthenticated, authErrorResponse } from '@/lib/api-auth'
+
+// Flag to track if tables have been initialized in this session
+let _tablesInitialized = false
+
+/**
+ * Ensure categories table exists
+ */
+async function ensureTablesExist() {
+  if (_tablesInitialized) return true
+  
+  try {
+    // Try to query - if it works, tables exist
+    await db.select().from(categories).limit(1)
+    _tablesInitialized = true
+    return true
+  } catch (error: any) {
+    // Table doesn't exist, create it
+    if (error.message?.includes('relation') || error.message?.includes('does not exist')) {
+      console.log('[CATEGORIES] Creating missing tables...')
+      
+      try {
+        await sqlClient`CREATE TABLE IF NOT EXISTS categories (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          type TEXT DEFAULT 'icon',
+          icon TEXT,
+          image TEXT,
+          items INTEGER DEFAULT 0,
+          status TEXT DEFAULT 'Active',
+          created_at TIMESTAMP DEFAULT NOW()
+        )`
+        
+        console.log('[CATEGORIES] Categories table created!')
+        _tablesInitialized = true
+        return true
+      } catch (createError) {
+        console.error('[CATEGORIES] Failed to create table:', createError)
+        throw createError
+      }
+    }
+    throw error
+  }
+}
 
 // GET /api/categories - Get all categories with product counts
 export async function GET() {
   try {
+    await ensureTablesExist()
+    
     // Get all categories
     const allCategories = await db.select().from(categories)
     
@@ -41,7 +86,7 @@ export async function GET() {
   } catch (error) {
     console.error('Error fetching categories:', error)
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch categories' },
+      { success: false, error: 'Failed to fetch categories: ' + (error as Error).message },
       { status: 500 }
     )
   }
@@ -55,7 +100,11 @@ export async function POST(request: NextRequest) {
       return authErrorResponse()
     }
 
+    await ensureTablesExist()
+
     const body = await request.json()
+    
+    console.log('[CATEGORIES] Creating category:', body.name)
     
     const newCategory = await db.insert(categories).values({
       id: body.id || `CAT-${Date.now()}`,
@@ -63,18 +112,20 @@ export async function POST(request: NextRequest) {
       type: body.type || 'icon',
       icon: body.icon || null,
       image: body.image || null,
-      items: 0, // Always start with 0, calculated from products
+      items: 0,
       status: body.status || 'Active',
     }).returning()
+    
+    console.log('[CATEGORIES] Category created successfully:', newCategory[0])
     
     return NextResponse.json({
       success: true,
       data: { ...newCategory[0], items: 0 }
     }, { status: 201 })
   } catch (error) {
-    console.error('Error creating category:', error)
+    console.error('[CATEGORIES] Error creating category:', error)
     return NextResponse.json(
-      { success: false, error: 'Failed to create category' },
+      { success: false, error: 'Failed to create category: ' + (error as Error).message },
       { status: 500 }
     )
   }
@@ -87,6 +138,8 @@ export async function PUT(request: NextRequest) {
     if (!await isApiAuthenticated()) {
       return authErrorResponse()
     }
+
+    await ensureTablesExist()
 
     const body = await request.json()
     const { id, ...updateData } = body
@@ -106,7 +159,6 @@ export async function PUT(request: NextRequest) {
         icon: updateData.icon || null,
         image: updateData.image || null,
         status: updateData.status,
-        // Don't update items - it's calculated from products
       })
       .where(eq(categories.id, id))
       .returning()
@@ -125,7 +177,7 @@ export async function PUT(request: NextRequest) {
   } catch (error) {
     console.error('Error updating category:', error)
     return NextResponse.json(
-      { success: false, error: 'Failed to update category' },
+      { success: false, error: 'Failed to update category: ' + (error as Error).message },
       { status: 500 }
     )
   }
@@ -139,10 +191,10 @@ export async function DELETE(request: NextRequest) {
       return authErrorResponse()
     }
 
+    await ensureTablesExist()
+
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
-    
-    console.log('DELETE category request for ID:', id)
     
     if (!id) {
       return NextResponse.json(
@@ -165,21 +217,17 @@ export async function DELETE(request: NextRequest) {
       )
     }
     
-    // Unassign all products from this category (set categoryId to null)
+    // Unassign all products from this category
     await db
       .update(products)
       .set({ categoryId: null })
       .where(eq(products.categoryId, id))
     
-    console.log('Unassigned products from category:', id)
-    
-    // Now delete the category
+    // Delete the category
     const deletedCategory = await db
       .delete(categories)
       .where(eq(categories.id, id))
       .returning()
-    
-    console.log('Deleted category:', deletedCategory)
     
     return NextResponse.json({
       success: true,
