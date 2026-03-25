@@ -391,15 +391,9 @@ export async function PUT(request: NextRequest) {
     
     setCachedSettings(cleaned)
     
-    console.log('[SETTINGS API] Returning success')
     return NextResponse.json({ success: true, data: maskSensitiveFields(cleaned) })
   } catch (error) {
     console.error('Error updating settings:', error)
     return NextResponse.json({ success: false, error: 'Failed to update settings' }, { status: 500 })
   }
-}
-
-// Clear cache function
-export function clearSettingsCache() {
-  globalThis.__settingsCache = undefined
 }
