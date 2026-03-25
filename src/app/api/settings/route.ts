@@ -5,7 +5,7 @@ import { eq } from 'drizzle-orm'
 import { hashPassword, isHashed } from '@/lib/auth'
 import { encrypt, safeDecrypt, isEncrypted, auditLog } from '@/lib/security'
 import { isApiAuthenticated, authErrorResponse } from '@/lib/api-auth'
-import { sanitizeString } from '@/lib/validation'
+import { sanitizeString, checkRateLimit, rateLimitErrorResponse } from '@/lib/validation'
 import { isPasswordStrongEnough } from '@/lib/password-strength'
 
 // Check if value is a masked placeholder (should never be saved)
@@ -170,15 +170,17 @@ export async function PUT(request: NextRequest) {
       return authErrorResponse()
     }
 
-    const body = await request.json()
-    const updateData: Record<string, any> = {}
-    
-    console.log('[SETTINGS API] Received update request:', JSON.stringify(body, null, 2))
-    
-    // Get client IP for audit logging
+    // Rate limiting: 10 requests per minute per IP
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0] || 
                request.headers.get('x-real-ip') || 
                'unknown'
+    const rateLimit = checkRateLimit(`settings-update:${ip}`, 10, 60000)
+    if (!rateLimit.allowed) {
+      return rateLimitErrorResponse(rateLimit.resetAt)
+    }
+
+    const body = await request.json()
+    const updateData: Record<string, any> = {}
     
     const directFields = [
       'websiteName', 'slogan', 'logoUrl', 'faviconUrl', 'heroImages',

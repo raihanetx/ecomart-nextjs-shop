@@ -3,8 +3,11 @@
 import React from 'react'
 import type { Coupon } from '@/types'
 import { useAdmin } from '@/components/admin/context/AdminContext'
+import { useCsrfFetch } from '@/hooks/useCsrfFetch'
 
 export function CouponsView() {
+  const { csrfFetch } = useCsrfFetch()
+  
   const {
     coupons,
     setCoupons,
@@ -59,7 +62,7 @@ export function CouponsView() {
     try {
       if (editingCoupon?.id) {
         // Update existing coupon
-        const response = await fetch('/api/coupons', {
+        const response = await csrfFetch('/api/coupons', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id: editingCoupon.id, ...couponData }),
@@ -73,7 +76,7 @@ export function CouponsView() {
         }
       } else {
         // Create new coupon
-        const response = await fetch('/api/coupons', {
+        const response = await csrfFetch('/api/coupons', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(couponData),
@@ -95,7 +98,7 @@ export function CouponsView() {
 
   const deleteCoupon = async (id: string) => {
     try {
-      const response = await fetch(`/api/coupons?id=${id}`, {
+      const response = await csrfFetch(`/api/coupons?id=${id}`, {
         method: 'DELETE',
       })
       const result = await response.json()

@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback, useEffect } from 'react'
 import { useAdmin } from '@/components/admin/context/AdminContext'
+import { useCsrfFetch } from '@/hooks/useCsrfFetch'
 import type { Order, OrderItem } from '@/types'
 import { roundPrice } from '@/lib/utils'
 
@@ -40,6 +41,8 @@ interface Category {
 }
 
 export function OrdersView() {
+  const { csrfFetch } = useCsrfFetch()
+  
   const {
     orders,
     currentOrderFilter,
@@ -142,7 +145,7 @@ export function OrdersView() {
           const variantsMap: Record<number, ProductVariant[]> = {}
           for (const p of prodData.data) {
             try {
-              const vRes = await fetch(`/api/variants?productId=${p.id}`)
+              const vRes = await csrfFetch(`/api/variants?productId=${p.id}`)
               const vData = await vRes.json()
               if (vData.success) variantsMap[p.id] = vData.data || []
             } catch {}
@@ -176,7 +179,7 @@ export function OrdersView() {
       const item = selectedOrder.items[i]
       if (item.productId) {
         try {
-          const res = await fetch(`/api/variants?productId=${item.productId}`)
+          const res = await csrfFetch(`/api/variants?productId=${item.productId}`)
           const data = await res.json()
           if (data.success) {
             newItemVariants[itemsWithTempIds[i].tempId] = data.data || []
@@ -380,7 +383,7 @@ export function OrdersView() {
   const loadItemVariants = async (tempId: string, productId: number) => {
     if (itemVariants[tempId]) return
     try {
-      const res = await fetch(`/api/variants?productId=${productId}`)
+      const res = await csrfFetch(`/api/variants?productId=${productId}`)
       const data = await res.json()
       if (data.success) setItemVariants(prev => ({ ...prev, [tempId]: data.data || [] }))
     } catch {}
@@ -431,7 +434,7 @@ export function OrdersView() {
     const { subtotal, discount, coupon, delivery, total } = calcTotals()
 
     try {
-      const res = await fetch('/api/orders', {
+      const res = await csrfFetch('/api/orders', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -482,7 +485,7 @@ export function OrdersView() {
   const updateStatus = async (id: string, status: 'approved' | 'canceled') => {
     try {
       // Update order status
-      const res = await fetch('/api/orders', {
+      const res = await csrfFetch('/api/orders', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, status, canceledBy: status === 'canceled' ? 'Admin' : null })
@@ -497,7 +500,7 @@ export function OrdersView() {
           showToastMsg('Approving & sending to courier...')
           
           try {
-            const courierRes = await fetch('/api/courier', {
+            const courierRes = await csrfFetch('/api/courier', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ orderId: id })
@@ -516,11 +519,9 @@ export function OrdersView() {
               showToastMsg('Approved & sent to courier!')
             } else {
               // Show error but order is still approved
-              console.error('Courier error:', courierResult.error)
               showToastMsg(`Approved. Courier: ${courierResult.error || 'Failed'}`)
             }
           } catch (courierError) {
-            console.error('Courier request failed:', courierError)
             showToastMsg('Approved. Courier service unavailable.')
           }
         } else {
@@ -566,7 +567,7 @@ export function OrdersView() {
     try {
       showToastMsg('Sending to courier...')
       
-      const courierRes = await fetch('/api/courier', {
+      const courierRes = await csrfFetch('/api/courier', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orderId })
@@ -593,7 +594,7 @@ export function OrdersView() {
   const verifyCourierAPI = async () => {
     try {
       setVerifyingCourier(true)
-      const res = await fetch('/api/courier?action=verify')
+      const res = await csrfFetch('/api/courier?action=verify')
       const result = await res.json()
       
       if (result.success) {
@@ -625,7 +626,7 @@ export function OrdersView() {
     
     try {
       // Fetch all coupons and validate
-      const res = await fetch('/api/coupons')
+      const res = await csrfFetch('/api/coupons')
       const data = await res.json()
       
       if (data.success && data.data) {
@@ -2062,7 +2063,7 @@ export function OrdersView() {
                   const total = subtotal - offerDiscount - newCouponDiscount + delivery
                   
                   try {
-                    const res = await fetch('/api/orders', {
+                    const res = await csrfFetch('/api/orders', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
@@ -2115,7 +2116,6 @@ export function OrdersView() {
                       })
                     })
                     const result = await res.json()
-                    console.log('Create order result:', result)
                     if (result.success) {
                       showToastMsg('Order created successfully!')
                       setCreateOrderOpen(false)
@@ -2133,15 +2133,11 @@ export function OrdersView() {
                       setAppliedCoupon(null)
                       setCouponError('')
                       // Refetch orders to get the new order from database
-                      console.log('About to refetch orders...')
                       await refetchOrders()
-                      console.log('Orders refetched, current orders count:', orders.length)
                     } else {
-                      console.error('Order creation failed:', result)
                       showToastMsg(result.error || 'Failed to create order')
                     }
                   } catch (err) {
-                    console.error('Error creating order:', err)
                     showToastMsg('Error creating order')
                   }
                   setCreating(false)
@@ -2334,7 +2330,6 @@ export function OrdersView() {
                     setShowReportModal(false)
                     showToastMsg('Report downloaded successfully!')
                   } catch (error) {
-                    console.error('Error generating report:', error)
                     showToastMsg('Error generating report')
                   } finally {
                     setDownloading(false)

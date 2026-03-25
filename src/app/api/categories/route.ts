@@ -4,6 +4,7 @@ import { categories, products } from '@/db/schema'
 import { eq, sql } from 'drizzle-orm'
 import { isApiAuthenticated, authErrorResponse } from '@/lib/api-auth'
 import { initializeDatabase, isDatabaseReady } from '@/lib/auto-init'
+import { internalError, validationError, notFoundError, logApiError } from '@/lib/api-errors'
 
 /**
  * GET /api/categories - Get all categories with product counts
@@ -47,11 +48,7 @@ export async function GET() {
       count: categoriesWithCounts.length
     })
   } catch (error) {
-    console.error('[CATEGORIES] Error fetching:', error)
-    return NextResponse.json(
-      { success: false, error: 'Failed to fetch categories: ' + (error as Error).message },
-      { status: 500 }
-    )
+    return internalError('CATEGORIES_GET', error)
   }
 }
 
@@ -72,14 +69,9 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     
-    console.log('[CATEGORIES] Creating category:', body.name)
-    
     // Validate required fields
     if (!body.name) {
-      return NextResponse.json(
-        { success: false, error: 'Category name is required' },
-        { status: 400 }
-      )
+      return validationError('Category name is required')
     }
     
     const newCategory = await db.insert(categories).values({
@@ -92,18 +84,12 @@ export async function POST(request: NextRequest) {
       status: body.status || 'Active',
     }).returning()
     
-    console.log('[CATEGORIES] Category created successfully:', newCategory[0])
-    
     return NextResponse.json({
       success: true,
       data: { ...newCategory[0], items: 0 }
     }, { status: 201 })
   } catch (error) {
-    console.error('[CATEGORIES] Error creating:', error)
-    return NextResponse.json(
-      { success: false, error: 'Failed to create category: ' + (error as Error).message },
-      { status: 500 }
-    )
+    return internalError('CATEGORIES_POST', error)
   }
 }
 
@@ -126,10 +112,7 @@ export async function PUT(request: NextRequest) {
     const { id, ...updateData } = body
     
     if (!id) {
-      return NextResponse.json(
-        { success: false, error: 'Category ID is required' },
-        { status: 400 }
-      )
+      return validationError('Category ID is required')
     }
     
     const updatedCategory = await db
@@ -145,10 +128,7 @@ export async function PUT(request: NextRequest) {
       .returning()
     
     if (updatedCategory.length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'Category not found' },
-        { status: 404 }
-      )
+      return notFoundError('Category not found')
     }
     
     return NextResponse.json({
@@ -156,11 +136,7 @@ export async function PUT(request: NextRequest) {
       data: updatedCategory[0]
     })
   } catch (error) {
-    console.error('[CATEGORIES] Error updating:', error)
-    return NextResponse.json(
-      { success: false, error: 'Failed to update category: ' + (error as Error).message },
-      { status: 500 }
-    )
+    return internalError('CATEGORIES_PUT', error)
   }
 }
 
@@ -183,10 +159,7 @@ export async function DELETE(request: NextRequest) {
     const id = searchParams.get('id')
     
     if (!id) {
-      return NextResponse.json(
-        { success: false, error: 'Category ID is required' },
-        { status: 400 }
-      )
+      return validationError('Category ID is required')
     }
     
     // First check if category exists
@@ -197,10 +170,7 @@ export async function DELETE(request: NextRequest) {
       .limit(1)
     
     if (existingCategory.length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'Category not found' },
-        { status: 404 }
-      )
+      return notFoundError('Category not found')
     }
     
     // Unassign all products from this category
@@ -221,10 +191,6 @@ export async function DELETE(request: NextRequest) {
       data: deletedCategory[0]
     })
   } catch (error) {
-    console.error('[CATEGORIES] Error deleting:', error)
-    return NextResponse.json(
-      { success: false, error: 'Failed to delete category: ' + (error as Error).message },
-      { status: 500 }
-    )
+    return internalError('CATEGORIES_DELETE', error)
   }
 }

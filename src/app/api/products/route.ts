@@ -4,6 +4,7 @@ import { products, variants, productImages, productFaqs, relatedProducts, review
 import { eq, and, sql, inArray } from 'drizzle-orm'
 import { isApiAuthenticated, authErrorResponse } from '@/lib/api-auth'
 import { initializeDatabase, isDatabaseReady } from '@/lib/auto-init'
+import { internalError, validationError, notFoundError } from '@/lib/api-errors'
 
 // Helper function to parse discount string
 function parseDiscount(discountStr: string | null): { discountType: 'pct' | 'fixed'; discountValue: number } {
@@ -139,11 +140,7 @@ export async function GET(request: NextRequest) {
       count: productsWithParsedDiscount.length
     })
   } catch (error) {
-    console.error('[PRODUCTS] Error fetching:', error)
-    return NextResponse.json(
-      { success: false, error: 'Failed to fetch products: ' + (error as Error).message },
-      { status: 500 }
-    )
+    return internalError('PRODUCTS_GET', error)
   }
 }
 
@@ -164,13 +161,10 @@ export async function POST(request: NextRequest) {
     
     // Validate required fields
     if (!body.name || !body.category || !body.image) {
-      return NextResponse.json(
-        { success: false, error: 'Missing required fields: name, category, image' },
-        { status: 400 }
-      )
+      return validationError('Missing required fields: name, category, image')
     }
     
-    console.log('[PRODUCTS] Creating product:', body.name)
+    // Create product
     
     const newProduct = await db.insert(products).values({
       name: body.name,
@@ -189,18 +183,14 @@ export async function POST(request: NextRequest) {
       weight: body.weight || null,
     }).returning()
     
-    console.log('[PRODUCTS] Product created successfully:', newProduct[0].id)
+    // Return created product
     
     return NextResponse.json({
       success: true,
       data: newProduct[0]
     }, { status: 201 })
   } catch (error) {
-    console.error('[PRODUCTS] Error creating:', error)
-    return NextResponse.json(
-      { success: false, error: 'Failed to create product: ' + (error instanceof Error ? error.message : 'Unknown error') },
-      { status: 500 }
-    )
+    return internalError('PRODUCTS_POST', error)
   }
 }
 
@@ -264,7 +254,7 @@ export async function PUT(request: NextRequest) {
       data: updated[0]
     })
   } catch (error) {
-    console.error('[PRODUCTS] Error updating:', error)
+    // Error logged by internalError
     return NextResponse.json(
       { success: false, error: 'Failed to update product: ' + (error instanceof Error ? error.message : 'Unknown error') },
       { status: 500 }
@@ -328,7 +318,7 @@ export async function DELETE(request: NextRequest) {
       data: deleted[0]
     })
   } catch (error) {
-    console.error('[PRODUCTS] Error deleting:', error)
+    // Error logged by internalError
     return NextResponse.json(
       { success: false, error: 'Failed to delete product: ' + (error as Error).message },
       { status: 500 }
@@ -384,7 +374,7 @@ export async function PATCH(request: NextRequest) {
       data: updated[0]
     })
   } catch (error) {
-    console.error('[PRODUCTS] Error patching:', error)
+    // Error logged by internalError
     return NextResponse.json(
       { success: false, error: 'Failed to update product: ' + (error as Error).message },
       { status: 500 }

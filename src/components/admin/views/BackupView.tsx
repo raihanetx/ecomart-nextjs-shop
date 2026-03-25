@@ -2,8 +2,10 @@
 
 import React, { useState, useRef } from 'react'
 import { useAdmin } from '@/components/admin/context/AdminContext'
+import { useCsrfFetch } from '@/hooks/useCsrfFetch'
 
 const BackupView: React.FC = () => {
+  const { csrfFetch } = useCsrfFetch()
   const { showToastMsg } = useAdmin()
   const [downloading, setDownloading] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -16,7 +18,7 @@ const BackupView: React.FC = () => {
   const handleDownloadBackup = async () => {
     setDownloading(true)
     try {
-      const response = await fetch('/api/backup')
+      const response = await csrfFetch('/api/backup')
       
       if (!response.ok) {
         const error = await response.json()
@@ -40,7 +42,6 @@ const BackupView: React.FC = () => {
       setLastBackup(new Date().toLocaleString())
       showToastMsg('Backup downloaded successfully!')
     } catch (error) {
-      console.error('Download error:', error)
       showToastMsg(error instanceof Error ? error.message : 'Download failed', 'error')
     } finally {
       setDownloading(false)
@@ -77,7 +78,7 @@ const BackupView: React.FC = () => {
       const formData = new FormData()
       formData.append('backup', file)
 
-      const response = await fetch('/api/restore', {
+      const response = await csrfFetch('/api/restore', {
         method: 'POST',
         body: formData
       })
@@ -92,7 +93,6 @@ const BackupView: React.FC = () => {
         throw new Error(result.error || 'Restore failed')
       }
     } catch (error) {
-      console.error('Restore error:', error)
       showToastMsg(error instanceof Error ? error.message : 'Restore failed', 'error')
     } finally {
       setUploading(false)
@@ -114,7 +114,7 @@ const BackupView: React.FC = () => {
 
     setLoading(true)
     try {
-      const response = await fetch('/api/seed', {
+      const response = await csrfFetch('/api/seed', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ clearFirst: true })
@@ -130,7 +130,6 @@ const BackupView: React.FC = () => {
         throw new Error(result.error || 'Failed to load sample data')
       }
     } catch (error) {
-      console.error('Load sample error:', error)
       showToastMsg(error instanceof Error ? error.message : 'Failed to load sample data', 'error')
     } finally {
       setLoading(false)
@@ -157,7 +156,7 @@ const BackupView: React.FC = () => {
 
     setClearing(true)
     try {
-      const response = await fetch('/api/seed', { method: 'DELETE' })
+      const response = await csrfFetch('/api/seed', { method: 'DELETE' })
       const result = await response.json()
 
       if (result.success) {
@@ -167,7 +166,6 @@ const BackupView: React.FC = () => {
         throw new Error(result.error || 'Failed to clear data')
       }
     } catch (error) {
-      console.error('Clear error:', error)
       showToastMsg(error instanceof Error ? error.message : 'Failed to clear data', 'error')
     } finally {
       setClearing(false)

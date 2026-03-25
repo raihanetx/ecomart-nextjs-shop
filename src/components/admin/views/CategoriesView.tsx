@@ -2,16 +2,8 @@
 
 import React, { useRef, useState } from 'react'
 import { useAdmin } from '@/components/admin/context/AdminContext'
+import { useCsrfFetch } from '@/hooks/useCsrfFetch'
 import type { Category } from '@/types'
-
-// Utility to clear shop data cache so frontend shows updates immediately
-async function clearShopCache() {
-  try {
-    await fetch('/api/shop-data', { method: 'POST' })
-  } catch (error) {
-    console.error('Failed to clear shop cache:', error)
-  }
-}
 
 // Popular icons that non-technical users can easily understand
 const POPULAR_ICONS = [
@@ -48,6 +40,17 @@ const POPULAR_ICONS = [
 ]
 
 export function CategoriesView() {
+  const { csrfFetch } = useCsrfFetch()
+  
+  // Utility to clear shop data cache so frontend shows updates immediately
+  const clearShopCache = async () => {
+    try {
+      await csrfFetch('/api/shop-data', { method: 'POST' })
+    } catch (error) {
+      // Silent fail - cache clear is not critical
+    }
+  }
+  
   const {
     categories,
     editingCategory,
@@ -103,7 +106,7 @@ export function CategoriesView() {
       
       if (exists) {
         // Update existing category
-        const response = await fetch('/api/categories', {
+        const response = await csrfFetch('/api/categories', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -128,7 +131,7 @@ export function CategoriesView() {
         }
       } else {
         // Create new category
-        const response = await fetch('/api/categories', {
+        const response = await csrfFetch('/api/categories', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -153,7 +156,6 @@ export function CategoriesView() {
         }
       }
     } catch (error) {
-      console.error('Error saving category:', error)
       showToastMsg('Error saving category')
     } finally {
       setIsSaving(false)
@@ -164,7 +166,7 @@ export function CategoriesView() {
     if (!confirm('Delete this category? Products in this category will be unassigned.')) return
     
     try {
-      const response = await fetch(`/api/categories?id=${id}`, {
+      const response = await csrfFetch(`/api/categories?id=${id}`, {
         method: 'DELETE'
       })
       
@@ -176,7 +178,6 @@ export function CategoriesView() {
         showToastMsg('Failed to delete category')
       }
     } catch (error) {
-      console.error('Error deleting category:', error)
       showToastMsg('Error deleting category')
     }
   }
@@ -190,7 +191,7 @@ export function CategoriesView() {
         formData.append('file', file)
         formData.append('type', 'category')
         
-        const response = await fetch('/api/upload', {
+        const response = await csrfFetch('/api/upload', {
           method: 'POST',
           body: formData
         })
@@ -209,7 +210,6 @@ export function CategoriesView() {
           }
         }
       } catch (error) {
-        console.error('Error uploading image:', error)
         showToastMsg('Upload failed. Check your internet connection.')
       } finally {
         setIsUploading(false)

@@ -455,7 +455,6 @@ export function AdminProvider({ children, setView }: { children: ReactNode; setV
         })))
       }
     } catch (error) {
-      console.error('Error fetching categories:', error)
     }
   }
   
@@ -482,7 +481,6 @@ export function AdminProvider({ children, setView }: { children: ReactNode; setV
         })))
       }
     } catch (error) {
-      console.error('Error fetching products:', error)
     }
   }
   
@@ -518,7 +516,6 @@ export function AdminProvider({ children, setView }: { children: ReactNode; setV
         setOrders(mappedOrders)
       }
     } catch (error) {
-      console.error('Error fetching orders:', error)
     }
   }
   
@@ -539,7 +536,6 @@ export function AdminProvider({ children, setView }: { children: ReactNode; setV
         })))
       }
     } catch (error) {
-      console.error('Error fetching coupons:', error)
     }
   }
   
@@ -639,7 +635,6 @@ export function AdminProvider({ children, setView }: { children: ReactNode; setV
         setCustomerProfiles(customersWithOrders)
       }
     } catch (error) {
-      console.error('Error fetching customers:', error)
     }
   }
   
@@ -711,7 +706,6 @@ export function AdminProvider({ children, setView }: { children: ReactNode; setV
         })
       }
     } catch (error) {
-      console.error('Error fetching settings:', error)
     }
   }
   
@@ -736,7 +730,6 @@ export function AdminProvider({ children, setView }: { children: ReactNode; setV
         })))
       }
     } catch (error) {
-      console.error('Error fetching inventory:', error)
     }
   }
   
@@ -757,7 +750,6 @@ export function AdminProvider({ children, setView }: { children: ReactNode; setV
         })))
       }
     } catch (error) {
-      console.error('Error fetching reviews:', error)
     }
   }
 
@@ -769,7 +761,6 @@ export function AdminProvider({ children, setView }: { children: ReactNode; setV
         setAbandonedCheckouts(data.data)
       }
     } catch (error) {
-      console.error('Error fetching abandoned checkouts:', error)
     }
   }
   

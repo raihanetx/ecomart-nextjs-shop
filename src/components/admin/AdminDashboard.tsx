@@ -1,21 +1,28 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, Suspense, lazy } from 'react'
 import { AdminProvider, useAdmin } from '@/components/admin/context/AdminContext'
 
-// View Components
-import OverviewView from '@/components/admin/views/OverviewView'
-import CategoriesView from '@/components/admin/views/CategoriesView'
-import ProductsView from '@/components/admin/views/ProductsView'
-import OrdersView from '@/components/admin/views/OrdersView'
-import CouponsView from '@/components/admin/views/CouponsView'
-import AbandonedView from '@/components/admin/views/AbandonedView'
-import CustomersView from '@/components/admin/views/CustomersView'
-import InventoryView from '@/components/admin/views/InventoryView'
-import ReviewsView from '@/components/admin/views/ReviewsView'
-import SettingsView from '@/components/admin/views/SettingsView'
-import CredentialsView from '@/components/admin/views/CredentialsView'
-import BackupView from '@/components/admin/views/BackupView'
+// Lazy-loaded View Components for better performance
+const OverviewView = lazy(() => import('@/components/admin/views/OverviewView'))
+const CategoriesView = lazy(() => import('@/components/admin/views/CategoriesView').then(m => ({ default: m.CategoriesView })))
+const ProductsView = lazy(() => import('@/components/admin/views/ProductsView'))
+const OrdersView = lazy(() => import('@/components/admin/views/OrdersView').then(m => ({ default: m.OrdersView })))
+const CouponsView = lazy(() => import('@/components/admin/views/CouponsView').then(m => ({ default: m.CouponsView })))
+const AbandonedView = lazy(() => import('@/components/admin/views/AbandonedView'))
+const CustomersView = lazy(() => import('@/components/admin/views/CustomersView'))
+const InventoryView = lazy(() => import('@/components/admin/views/InventoryView'))
+const ReviewsView = lazy(() => import('@/components/admin/views/ReviewsView'))
+const SettingsView = lazy(() => import('@/components/admin/views/SettingsView'))
+const CredentialsView = lazy(() => import('@/components/admin/views/CredentialsView'))
+const BackupView = lazy(() => import('@/components/admin/views/BackupView'))
+
+// Loading component for lazy views
+const ViewLoader = () => (
+  <div className="flex items-center justify-center h-64">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+  </div>
+)
 
 // Types
 import type { ViewType } from '@/types'
@@ -193,51 +200,75 @@ function AdminDashboardContent({ setView }: { setView: (v: ViewType) => void }) 
           </div>
         </div>
 
-        {/* View Content */}
+        {/* View Content with Suspense for lazy loading */}
         {dashView === 'overview' && !editingCategory && !editingProduct && (
-          <OverviewView setDashView={setDashView} />
+          <Suspense fallback={<ViewLoader />}>
+            <OverviewView setDashView={setDashView} />
+          </Suspense>
         )}
         
         {dashView === 'categories' && (
-          <CategoriesView />
+          <Suspense fallback={<ViewLoader />}>
+            <CategoriesView />
+          </Suspense>
         )}
         
         {dashView === 'products' && (
-          <ProductsView />
+          <Suspense fallback={<ViewLoader />}>
+            <ProductsView />
+          </Suspense>
         )}
         
         {dashView === 'orders' && (
-          <OrdersView />
+          <Suspense fallback={<ViewLoader />}>
+            <OrdersView />
+          </Suspense>
         )}
         
         {dashView === 'coupons' && (
-          <CouponsView />
+          <Suspense fallback={<ViewLoader />}>
+            <CouponsView />
+          </Suspense>
         )}
         
         {dashView === 'abandoned' && (
-          <AbandonedView />
+          <Suspense fallback={<ViewLoader />}>
+            <AbandonedView />
+          </Suspense>
         )}
         
         {dashView === 'customers' && (
-          <CustomersView />
+          <Suspense fallback={<ViewLoader />}>
+            <CustomersView />
+          </Suspense>
         )}
         
         {dashView === 'inventory' && (
-          <InventoryView />
+          <Suspense fallback={<ViewLoader />}>
+            <InventoryView />
+          </Suspense>
         )}
         
         {dashView === 'reviews' && (
-          <ReviewsView />
+          <Suspense fallback={<ViewLoader />}>
+            <ReviewsView />
+          </Suspense>
         )}
         
         {dashView === 'settings' && (
-          <SettingsView />
+          <Suspense fallback={<ViewLoader />}>
+            <SettingsView />
+          </Suspense>
         )}
         {dashView === 'credentials' && (
-          <CredentialsView />
+          <Suspense fallback={<ViewLoader />}>
+            <CredentialsView />
+          </Suspense>
         )}
         {dashView === 'backup' && (
-          <BackupView />
+          <Suspense fallback={<ViewLoader />}>
+            <BackupView />
+          </Suspense>
         )}
       </main>
 

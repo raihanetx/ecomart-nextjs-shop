@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { useAdmin } from '@/components/admin/context/AdminContext'
+import { useCsrfFetch } from '@/hooks/useCsrfFetch'
 
 type SettingsTab = 'branding' | 'hero' | 'delivery' | 'social' | 'legal' | 'sections'
 
@@ -31,6 +32,7 @@ const ANIMATION_OPTIONS = [
 ]
 
 const SettingsView: React.FC = () => {
+  const { csrfFetch } = useCsrfFetch()
   const { settings, setSettings, showToastMsg, refetchSettings } = useAdmin()
   
   const [activeTab, setActiveTab] = useState<SettingsTab>('branding')
@@ -209,7 +211,7 @@ const SettingsView: React.FC = () => {
     formData.append('type', type)
     
     try {
-      const response = await fetch('/api/upload', { method: 'POST', body: formData })
+      const response = await csrfFetch('/api/upload', { method: 'POST', body: formData })
       const result = await response.json()
       return result.success ? result.url : null
     } catch {
@@ -221,7 +223,7 @@ const SettingsView: React.FC = () => {
   const saveSettingsOptimized = useCallback(async (updateData: Record<string, any>, onSuccess?: () => void) => {
     setSaving(true)
     try {
-      const res = await fetch('/api/settings', {
+      const res = await csrfFetch('/api/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updateData)
@@ -464,9 +466,8 @@ const SettingsView: React.FC = () => {
 
     setSaving(true)
     try {
-      console.log('[Section Save] Saving:', item.field, '=', trimmedValue === '' ? '(empty)' : trimmedValue)
       
-      const res = await fetch('/api/settings', {
+      const res = await csrfFetch('/api/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ [item.field]: trimmedValue })
@@ -474,7 +475,6 @@ const SettingsView: React.FC = () => {
       const data = await res.json()
 
       if (data.success) {
-        console.log('[Section Save] Success! Updated:', item.field)
         
         // Update local settings state directly
         setSettings((prev: any) => ({ ...prev, [item.field]: trimmedValue }))
@@ -489,11 +489,9 @@ const SettingsView: React.FC = () => {
         setEditingSectionValue('')
         showToastMsg(`${item.label} saved successfully!`)
       } else {
-        console.error('[Section Save] Failed:', data.error)
         showToastMsg(data.error || 'Failed to save')
       }
     } catch (error) {
-      console.error('Save error:', error)
       showToastMsg('Error saving')
     }
     setSaving(false)

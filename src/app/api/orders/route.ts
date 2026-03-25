@@ -392,13 +392,35 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // Build update object
+    // Input validation for numeric fields
+    const validateNumericField = (value: any, fieldName: string): number | null => {
+      if (value === undefined) return null
+      const num = parseFloat(String(value))
+      if (isNaN(num)) {
+        throw new Error(`Invalid ${fieldName}: must be a number`)
+      }
+      if (num < 0) {
+        throw new Error(`Invalid ${fieldName}: cannot be negative`)
+      }
+      return num
+    }
+
+    // Build update object with validated values
     const updateData: any = { updatedAt: new Date() }
-    if (subtotal !== undefined) updateData.subtotal = subtotal
-    if (discount !== undefined) updateData.discount = discount
-    if (couponAmount !== undefined) updateData.couponAmount = couponAmount
-    if (total !== undefined) updateData.total = total
-    if (delivery !== undefined) updateData.delivery = delivery
+    
+    try {
+      if (subtotal !== undefined) updateData.subtotal = validateNumericField(subtotal, 'subtotal')
+      if (discount !== undefined) updateData.discount = validateNumericField(discount, 'discount')
+      if (couponAmount !== undefined) updateData.couponAmount = validateNumericField(couponAmount, 'couponAmount')
+      if (total !== undefined) updateData.total = validateNumericField(total, 'total')
+      if (delivery !== undefined) updateData.delivery = validateNumericField(delivery, 'delivery')
+    } catch (validationError: any) {
+      return NextResponse.json(
+        { success: false, error: validationError.message },
+        { status: 400 }
+      )
+    }
+    
     if (customer !== undefined) updateData.customerName = customer
     if (phone !== undefined) updateData.phone = phone
     if (address !== undefined) updateData.address = address

@@ -3,17 +3,20 @@
 import React, { useEffect, useState } from 'react'
 import type { Product } from '@/types'
 import { useAdmin } from '@/components/admin/context/AdminContext'
-
-// Utility to clear shop data cache so frontend shows updates immediately
-async function clearShopCache() {
-  try {
-    await fetch('/api/shop-data', { method: 'POST' })
-  } catch (error) {
-    console.error('Failed to clear shop cache:', error)
-  }
-}
+import { useCsrfFetch } from '@/hooks/useCsrfFetch'
 
 export default function ProductsView() {
+  const { csrfFetch } = useCsrfFetch()
+  
+  // Utility to clear shop data cache so frontend shows updates immediately
+  const clearShopCache = async () => {
+    try {
+      await csrfFetch('/api/shop-data', { method: 'POST' })
+    } catch (error) {
+      // Silent fail - cache clear is not critical
+    }
+  }
+  
   const {
     products,
     setProducts,
@@ -47,9 +50,8 @@ export default function ProductsView() {
         }
         
         try {
-          const response = await fetch(`/api/variants?productId=${editingProduct.id}`)
+          const response = await csrfFetch(`/api/variants?productId=${editingProduct.id}`)
           if (!response.ok) {
-            console.error('Failed to fetch variants')
             return
           }
           const result = await response.json()
@@ -72,7 +74,6 @@ export default function ProductsView() {
             }))
           }
         } catch (error) {
-          console.error('Error loading variants:', error)
         }
       }
     }
@@ -88,13 +89,12 @@ export default function ProductsView() {
         if (!existingProduct) return
         
         try {
-          const response = await fetch(`/api/product-images?productId=${editingProduct.id}`)
+          const response = await csrfFetch(`/api/product-images?productId=${editingProduct.id}`)
           const result = await response.json()
           if (result.success && result.data && result.data.length > 0) {
             setProdImages(result.data.map((img: any) => img.url))
           }
         } catch (error) {
-          console.error('Error loading images:', error)
         }
       }
     }
@@ -110,7 +110,7 @@ export default function ProductsView() {
         if (!existingProduct) return
         
         try {
-          const response = await fetch(`/api/product-faqs?productId=${editingProduct.id}`)
+          const response = await csrfFetch(`/api/product-faqs?productId=${editingProduct.id}`)
           const result = await response.json()
           if (result.success && result.data) {
             setProdFaqs(result.data.map((faq: any) => ({
@@ -120,7 +120,6 @@ export default function ProductsView() {
             })))
           }
         } catch (error) {
-          console.error('Error loading FAQs:', error)
         }
       }
     }
@@ -136,13 +135,12 @@ export default function ProductsView() {
         if (!existingProduct) return
         
         try {
-          const response = await fetch(`/api/related-products?productId=${editingProduct.id}`)
+          const response = await csrfFetch(`/api/related-products?productId=${editingProduct.id}`)
           const result = await response.json()
           if (result.success && result.data) {
             setProdRelated(result.data.map((r: any) => r.relatedProductId))
           }
         } catch (error) {
-          console.error('Error loading related products:', error)
         }
       }
     }
@@ -232,7 +230,7 @@ export default function ProductsView() {
       
       if (isNewProduct) {
         // Create new product
-        const response = await fetch('/api/products', {
+        const response = await csrfFetch('/api/products', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(productData),
@@ -248,7 +246,7 @@ export default function ProductsView() {
         }
       } else {
         // Update existing product
-        const response = await fetch('/api/products', {
+        const response = await csrfFetch('/api/products', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id: editingProduct.id, ...productData }),
@@ -266,10 +264,10 @@ export default function ProductsView() {
       // Save variants to database
       if (prodVarieties.length > 0 && savedProductId) {
         // First, delete existing variants for this product
-        await fetch(`/api/variants?productId=${savedProductId}`, { method: 'DELETE' })
+        await csrfFetch(`/api/variants?productId=${savedProductId}`, { method: 'DELETE' })
         
         // Then, create new variants
-        await fetch('/api/variants', {
+        await csrfFetch('/api/variants', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(prodVarieties.map(v => ({
@@ -288,11 +286,11 @@ export default function ProductsView() {
       // Save images to database
       if (savedProductId) {
         // First, delete existing images for this product
-        await fetch(`/api/product-images?productId=${savedProductId}`, { method: 'DELETE' })
+        await csrfFetch(`/api/product-images?productId=${savedProductId}`, { method: 'DELETE' })
         
         // Then, create new images if any
         if (prodImages.length > 0) {
-          await fetch('/api/product-images', {
+          await csrfFetch('/api/product-images', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(prodImages.map((url, index) => ({
@@ -307,11 +305,11 @@ export default function ProductsView() {
       // Save FAQs to database
       if (savedProductId) {
         // First, delete existing FAQs for this product
-        await fetch(`/api/product-faqs?productId=${savedProductId}`, { method: 'DELETE' })
+        await csrfFetch(`/api/product-faqs?productId=${savedProductId}`, { method: 'DELETE' })
         
         // Then, create new FAQs if any
         if (prodFaqs.length > 0) {
-          await fetch('/api/product-faqs', {
+          await csrfFetch('/api/product-faqs', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(prodFaqs.filter(f => f.question && f.answer).map((faq, index) => ({
@@ -327,11 +325,11 @@ export default function ProductsView() {
       // Save related products to database
       if (savedProductId) {
         // First, delete existing related products for this product
-        await fetch(`/api/related-products?productId=${savedProductId}`, { method: 'DELETE' })
+        await csrfFetch(`/api/related-products?productId=${savedProductId}`, { method: 'DELETE' })
         
         // Then, create new related products if any
         if (prodRelated.length > 0) {
-          await fetch('/api/related-products', {
+          await csrfFetch('/api/related-products', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(prodRelated.map((relatedProductId, index) => ({
@@ -360,7 +358,7 @@ export default function ProductsView() {
     setProducts(products.map(p => p.id === id ? { ...p, status: newStatus } : p))
     
     try {
-      const response = await fetch('/api/products', {
+      const response = await csrfFetch('/api/products', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, status: newStatus }),
@@ -382,7 +380,7 @@ export default function ProductsView() {
 
   const deleteProduct = async (id: number) => {
     try {
-      const response = await fetch(`/api/products?id=${id}`, {
+      const response = await csrfFetch(`/api/products?id=${id}`, {
         method: 'DELETE',
       })
       const result = await response.json()
@@ -399,7 +397,6 @@ export default function ProductsView() {
   }
 
   const addVariety = () => {
-    console.log('[ProductsView] addVariety called, current varieties:', prodVarieties.length)
     setProdVarieties(prev => {
       const newVarieties = [...prev, { 
         id: Date.now(), 
@@ -410,7 +407,6 @@ export default function ProductsView() {
         discountType: 'pct' as const, 
         discountValue: '' 
       }]
-      console.log('[ProductsView] new varieties count:', newVarieties.length)
       return newVarieties
     })
   }
@@ -565,7 +561,7 @@ export default function ProductsView() {
                         formData.append('file', file)
                         formData.append('type', 'product')
                         
-                        const response = await fetch('/api/upload', {
+                        const response = await csrfFetch('/api/upload', {
                           method: 'POST',
                           body: formData
                         })
@@ -577,7 +573,6 @@ export default function ProductsView() {
                           showToastMsg(`Failed to upload ${file.name}`)
                         }
                       } catch (error) {
-                        console.error('Upload error:', error)
                         showToastMsg(`Error uploading ${file.name}`)
                       }
                     }

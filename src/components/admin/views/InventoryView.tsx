@@ -77,7 +77,6 @@ const InventoryView: React.FC = () => {
         showToastMsg('Failed to delete product')
       }
     } catch (error) {
-      console.error('Error deleting inventory:', error)
       showToastMsg('Failed to delete product')
     } finally {
       setDeletingId(null)
@@ -110,7 +109,6 @@ const InventoryView: React.FC = () => {
         showToastMsg('Failed to save settings')
       }
     } catch (error) {
-      console.error('Error saving settings:', error)
       showToastMsg('Failed to save settings')
     } finally {
       setSavingSettings(false)
@@ -391,7 +389,6 @@ const InventoryView: React.FC = () => {
                     setEditingInventoryItem(null)
                     showToastMsg('Stock updated!')
                   } catch (error) {
-                    console.error('Error saving inventory:', error)
                     showToastMsg('Failed to update stock')
                   } finally {
                     setSavingStock(false)

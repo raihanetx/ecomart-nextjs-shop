@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from 'react'
 import { useAdmin } from '@/components/admin/context/AdminContext'
+import { useCsrfFetch } from '@/hooks/useCsrfFetch'
 
 interface Credential {
   id: number
@@ -56,6 +57,7 @@ const formatLastEdited = (isoString: string | null | undefined): string => {
 }
 
 const CredentialsView: React.FC = () => {
+  const { csrfFetch } = useCsrfFetch()
   const { settings, showToastMsg, refetchSettings } = useAdmin()
   const [activeTab, setActiveTab] = useState<'admin' | 'courier' | 'cloudinary'>('admin')
   const [saving, setSaving] = useState(false)
@@ -217,7 +219,7 @@ const CredentialsView: React.FC = () => {
 
     setSaving(true)
     try {
-      const res = await fetch('/api/settings', {
+      const res = await csrfFetch('/api/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ [cred.fieldKey]: editValue.trim() })
@@ -234,7 +236,6 @@ const CredentialsView: React.FC = () => {
         showToastMsg(data.error || 'Failed to save')
       }
     } catch (error) {
-      console.error('Save error:', error)
       showToastMsg('Error saving credential')
     }
     setSaving(false)
@@ -255,7 +256,7 @@ const CredentialsView: React.FC = () => {
     setTesting(true)
 
     try {
-      const res = await fetch('/api/test-connection', {
+      const res = await csrfFetch('/api/test-connection', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: activeTab })
@@ -270,7 +271,6 @@ const CredentialsView: React.FC = () => {
         showToastMsg(`${serviceName} not connected`, 'error')
       }
     } catch (error) {
-      console.error('Test error:', error)
       showToastMsg('Connection test failed', 'error')
     }
 

@@ -66,7 +66,6 @@ export default function AdminSidebar({
       await fetch('/api/auth/logout', { method: 'POST' })
       window.location.href = '/admin'
     } catch (error) {
-      console.error('Logout failed:', error)
     }
   }
 

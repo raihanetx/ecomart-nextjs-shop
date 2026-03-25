@@ -97,7 +97,6 @@ export const OverviewView: React.FC<OverviewViewProps> = ({ setDashView }) => {
         }
       } catch (err) {
         setError('Failed to connect to server')
-        console.error('Dashboard fetch error:', err)
       } finally {
         setLoading(false)
       }

@@ -51,7 +51,6 @@ const PageContentView: React.FC = () => {
         showToastMsg('Failed to save content')
       }
     } catch (error) {
-      console.error('Error saving content:', error)
       showToastMsg('Error saving content')
     } finally {
       setSaving(false)
